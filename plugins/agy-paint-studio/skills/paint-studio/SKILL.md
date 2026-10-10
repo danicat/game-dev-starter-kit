@@ -6,10 +6,11 @@ license: Apache-2.0
 
 # Paint Studio (`/paint-studio`)
 
-Paint Studio supports three simultaneous modes from a single `SidecarApp` backend (`agy-paint-studio/studio`):
+Paint Studio supports four simultaneous views from a single `SidecarApp` backend (`agy-paint-studio/studio`):
 1. **Inline Chat Canvas (`<agent-embed>`)**: Interactive 480px studio card embedded directly in the conversation stream.
 2. **Side-Pane UI Extension (`sidecar://agy-paint-studio/studio/`)**: Docked auxiliary side pane in Antigravity (`SIDECAR_UI_ENTRYPOINT_AUX_PANE`) that expands to full studio mode when widened or maximized.
-3. **Full Browser Window**: Pop-out full-screen studio via the **Full Mode** button in the header.
+3. **Custom Image & `.psd` File Viewer (`file_extensions: [".psd", ".png", ".jpg", ".jpeg", ".webp"]`)**: Clicking any `.psd`, `.png`, `.jpg`, `.jpeg`, or `.webp` file in Antigravity mounts Paint Studio with `?file=/path/to/file` and loads the image or PSD layer stack onto the canvas.
+4. **Full Browser Window**: Pop-out full-screen studio via the **Full Mode** button in the header.
 
 ## Execution Runbook
 

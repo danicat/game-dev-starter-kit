@@ -205,28 +205,16 @@ body.studio-mode-full #app-root {
 }
 
 .workspace-path-input {
-  flex: 1 1 110px;
-  min-width: 80px;
-  max-width: 230px;
-  height: 28px;
-  font-size: 12px;
-  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
-}
-
-.pkg-path-input {
-  width: 68px;
-  min-width: 52px;
+  flex: 1 1 160px;
+  min-width: 110px;
+  max-width: 340px;
   height: 28px;
   font-size: 12px;
   font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
 }
 
 .studio-mode-preview .workspace-path-input {
-  max-width: 150px;
-}
-
-.studio-mode-preview .pkg-path-input {
-  width: 60px;
+  max-width: 220px;
 }
 
 .header-divider {

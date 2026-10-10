@@ -56,6 +56,7 @@ export interface HealthInfo {
 export interface WorkspaceResolveResult {
   workspace: string;
   pkg: string;
+  projectPath?: string;
   hasGoMod?: boolean;
 }
 

@@ -1117,7 +1117,8 @@ export function createSidecarApp() {
     const origListeners = server.listeners('request');
     server.removeAllListeners('request');
     server.on('request', (req, res) => {
-      console.log(`[paint-studio HTTP] ${req.method} ${req.url}`);
+      const safeUrl = (req.url || '/').replace(/([?&]token=)[^&]+/gi, '$1[REDACTED]');
+      console.log(`[paint-studio HTTP] ${req.method} ${safeUrl}`);
       res.setHeader('Access-Control-Allow-Origin', '*');
       res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
       res.setHeader('Access-Control-Allow-Headers', 'Content-Type, X-Sidecar-Token');

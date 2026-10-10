@@ -280,12 +280,11 @@ export class PlaytestStudioUI {
     }
     try {
       const resolved = await resolveWorkspaceUri(workspaceUri);
-      if (resolved.workspace) {
-        setWorkspacePath(resolved.workspace);
+      const unifiedPath = resolved.projectPath || resolved.workspace;
+      if (unifiedPath) {
+        setWorkspacePath(unifiedPath);
       }
-      if (resolved.pkg) {
-        this.activePkg = resolved.pkg;
-      }
+      this.activePkg = '.';
       this.updateHeaderInputsUI();
       return Boolean(resolved.hasGoMod);
     } catch (err) {
@@ -370,19 +369,10 @@ export class PlaytestStudioUI {
             type="text"
             id="workspace-input"
             class="input-text workspace-path-input"
-            placeholder="Workspace path (e.g. /path/to/game)"
+            placeholder="Go project path (e.g. /path/to/game)"
             value="${this.escapeAttr(ws)}"
-            aria-label="Go workspace directory path"
-            title="Go Workspace Directory Path"
-          />
-          <input
-            type="text"
-            id="pkg-input"
-            class="input-text pkg-path-input"
-            placeholder="./cmd/game or ."
-            value="${this.escapeAttr(this.activePkg)}"
-            aria-label="Go main package path"
-            title="Go Main Package Path (e.g. . or ./cmd/game)"
+            aria-label="Go project or package directory path"
+            title="Go Project or Package Directory Path"
           />
           <button
             type="button"
@@ -622,23 +612,13 @@ export class PlaytestStudioUI {
 
           <div class="ready-form-row">
             <div class="ready-field">
-              <label for="ready-workspace-input">Go Workspace Directory</label>
+              <label for="ready-workspace-input">Go Project or Package Directory</label>
               <input
                 type="text"
                 id="ready-workspace-input"
                 class="input-text"
-                placeholder="/path/to/ebitengine-game"
+                placeholder="/path/to/ebitengine-game or /path/to/repo/cmd/game"
                 value="${this.escapeAttr(ws)}"
-              />
-            </div>
-            <div class="ready-field ready-field-pkg">
-              <label for="ready-pkg-input">Package</label>
-              <input
-                type="text"
-                id="ready-pkg-input"
-                class="input-text"
-                placeholder="./cmd/game or ."
-                value="${this.escapeAttr(this.activePkg)}"
               />
             </div>
           </div>
@@ -776,27 +756,32 @@ export class PlaytestStudioUI {
   }
 
   private bindEvents(): void {
-    // Synchronize workspace & package inputs between Header and Ready screen
+    // Synchronize unified project path input between Header and Ready screen
     const headerWsInput = this.headerEl.querySelector('#workspace-input') as HTMLInputElement;
-    const headerPkgInput = this.headerEl.querySelector('#pkg-input') as HTMLInputElement;
     const readyWsInput = this.viewportEl.querySelector('#ready-workspace-input') as HTMLInputElement;
-    const readyPkgInput = this.viewportEl.querySelector('#ready-pkg-input') as HTMLInputElement;
 
     const syncWs = (val: string) => {
       setWorkspacePath(val);
       if (headerWsInput.value !== val) headerWsInput.value = val;
       if (readyWsInput.value !== val) readyWsInput.value = val;
     };
-    const syncPkg = (val: string) => {
-      this.activePkg = val.trim() || '.';
-      if (headerPkgInput.value !== val) headerPkgInput.value = val;
-      if (readyPkgInput.value !== val) readyPkgInput.value = val;
-    };
 
     headerWsInput.addEventListener('change', () => syncWs(headerWsInput.value));
+    headerWsInput.addEventListener('keydown', (e: KeyboardEvent) => {
+      if (e.key === 'Enter') {
+        e.preventDefault();
+        syncWs(headerWsInput.value);
+        void this.handleBuildAndRun();
+      }
+    });
     readyWsInput.addEventListener('input', () => syncWs(readyWsInput.value));
-    headerPkgInput.addEventListener('change', () => syncPkg(headerPkgInput.value));
-    readyPkgInput.addEventListener('input', () => syncPkg(readyPkgInput.value));
+    readyWsInput.addEventListener('keydown', (e: KeyboardEvent) => {
+      if (e.key === 'Enter') {
+        e.preventDefault();
+        syncWs(readyWsInput.value);
+        void this.handleBuildAndRun();
+      }
+    });
 
     onWorkspaceChange(() => this.updateHeaderInputsUI());
     onSessionChange(() => this.updateSessionBadgeUI());
@@ -804,13 +789,11 @@ export class PlaytestStudioUI {
     // Build & Run buttons
     this.headerEl.querySelector('#btn-build-run')?.addEventListener('click', () => {
       syncWs(headerWsInput.value);
-      syncPkg(headerPkgInput.value);
       void this.handleBuildAndRun();
     });
 
     this.viewportEl.querySelector('#btn-ready-build')?.addEventListener('click', () => {
       syncWs(readyWsInput.value);
-      syncPkg(readyPkgInput.value);
       void this.handleBuildAndRun();
     });
 
@@ -1085,10 +1068,9 @@ export class PlaytestStudioUI {
     this.setBuildButtonsLoading(true);
 
     try {
-      StudioNotifier.info(`Compiling Go WASM in "${workspace}" (${this.activePkg})...`, 2500);
+      StudioNotifier.info(`Compiling Go WASM in "${workspace}"...`, 2500);
       const result = await buildWasm({
-        workspace,
-        pkg: this.activePkg
+        workspace
       });
 
       if (!result.ok) {
@@ -1101,6 +1083,7 @@ export class PlaytestStudioUI {
         return;
       }
 
+      this.activePkg = result.pkg || '.';
       this.showActiveGameStage();
       await this.runner.launchBuild(result.buildId);
 
@@ -1713,23 +1696,11 @@ export class PlaytestStudioUI {
     const readyWsInput = this.viewportEl.querySelector(
       '#ready-workspace-input'
     ) as HTMLInputElement | null;
-    const headerPkgInput = this.headerEl.querySelector(
-      '#pkg-input'
-    ) as HTMLInputElement | null;
-    const readyPkgInput = this.viewportEl.querySelector(
-      '#ready-pkg-input'
-    ) as HTMLInputElement | null;
     if (headerWsInput && headerWsInput.value !== ws) {
       headerWsInput.value = ws;
     }
     if (readyWsInput && readyWsInput.value !== ws) {
       readyWsInput.value = ws;
-    }
-    if (headerPkgInput && headerPkgInput.value !== this.activePkg) {
-      headerPkgInput.value = this.activePkg;
-    }
-    if (readyPkgInput && readyPkgInput.value !== this.activePkg) {
-      readyPkgInput.value = this.activePkg;
     }
     const fullLink = this.headerEl.querySelector('#btn-full-studio') as HTMLAnchorElement | null;
     if (fullLink) {

@@ -1,6 +1,6 @@
 {
   "name": "agy-paint-studio",
-  "version": "1.0.0",
+  "version": "0.1.0",
   "description": "Interactive multi-layer drawing, PSD editing, and Gemini AI image refinement studio for Antigravity.",
   "type": "module",
   "main": "server/index.mjs",

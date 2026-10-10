@@ -58,26 +58,40 @@ export function getDefaultWorkspace() {
   return cwd;
 }
 
-export function resolveWorkspaceInfo(workspaceInput) {
-  if (!workspaceInput || typeof workspaceInput !== 'string' || !workspaceInput.trim()) {
-    const defaultWs = getDefaultWorkspace();
-    let pkg = '.';
-    try {
-      pkg = discoverMainPackage(defaultWs);
-    } catch {
-      pkg = '.';
+function hasEnclosingGoMod(startDir) {
+  let current = path.resolve(startDir);
+  for (let depth = 0; depth < 6; depth++) {
+    if (fs.existsSync(path.join(current, 'go.mod'))) {
+      return true;
     }
-    return { workspace: defaultWs, pkg };
+    const parent = path.dirname(current);
+    if (parent === current) break;
+    current = parent;
   }
+  return false;
+}
 
-  const resolvedPath = normalizeWorkspacePath(workspaceInput);
+export function resolveWorkspaceInfo(workspaceInput) {
+  const resolvedPath =
+    workspaceInput && typeof workspaceInput === 'string' && workspaceInput.trim()
+      ? normalizeWorkspacePath(workspaceInput)
+      : getDefaultWorkspace();
+
   let pkg = '.';
   try {
     pkg = discoverMainPackage(resolvedPath);
   } catch {
     pkg = '.';
   }
-  return { workspace: resolvedPath, pkg };
+
+  const projectPath =
+    pkg && pkg !== '.' ? path.resolve(resolvedPath, pkg) : resolvedPath;
+  const hasGoMod =
+    fs.existsSync(path.join(resolvedPath, 'go.mod')) ||
+    fs.existsSync(path.join(projectPath, 'go.mod')) ||
+    hasEnclosingGoMod(projectPath);
+
+  return { workspace: resolvedPath, pkg, projectPath, hasGoMod };
 }
 
 // Determine Antigravity app data directory portably with fail-fast validation

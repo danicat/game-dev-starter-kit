@@ -369,5 +369,29 @@ describe('SidecarApp UI Extension Endpoints & Security Integration Tests', () =>
       }),
     });
     assert.strictEqual(badPathRes.status, 403);
+
+    // Open saved PSD via GET /api/fs/open (used by ?file= custom file viewer)
+    const openPsdRes = await fetch(
+      `${baseUrl}/api/fs/open?file=${encodeURIComponent(savePsdData.path)}`
+    );
+    assert.strictEqual(openPsdRes.status, 200);
+    assert.strictEqual(openPsdRes.headers.get('content-type'), 'image/vnd.adobe.photoshop');
+    const openPsdBuf = Buffer.from(await openPsdRes.arrayBuffer());
+    assert.strictEqual(openPsdBuf.toString('binary'), '8BPS\x00\x01');
+
+    // Open saved PNG via GET /api/fs/open (used by ?file= custom file viewer)
+    const openPngRes = await fetch(
+      `${baseUrl}/api/fs/open?file=${encodeURIComponent(savePngData.path)}`
+    );
+    assert.strictEqual(openPngRes.status, 200);
+    assert.strictEqual(openPngRes.headers.get('content-type'), 'image/png');
+    const openPngBuf = Buffer.from(await openPngRes.arrayBuffer());
+    assert.ok(openPngBuf.length > 0);
+
+    // Block reading disallowed paths or extensions via GET /api/fs/open
+    const openEtcRes = await fetch(
+      `${baseUrl}/api/fs/open?file=${encodeURIComponent('/etc/passwd')}`
+    );
+    assert.ok(openEtcRes.status === 400 || openEtcRes.status === 403);
   });
 });
