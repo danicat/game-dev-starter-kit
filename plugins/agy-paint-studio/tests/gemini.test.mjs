@@ -16,7 +16,6 @@
 
 import { test, describe, before } from 'node:test';
 import assert from 'node:assert/strict';
-import sharp from 'sharp';
 import * as geminiModule from '../server/services/gemini.mjs';
 
 const {
@@ -28,17 +27,18 @@ const {
 describe('GeminiRefineService & STYLE_PRESETS Validation', () => {
   let validPngBase64;
 
-  before(async () => {
-    const buf = await sharp({
-      create: {
-        width: 128,
-        height: 96,
-        channels: 4,
-        background: { r: 40, g: 80, b: 160, alpha: 1 },
-      },
-    })
-      .png()
-      .toBuffer();
+  before(() => {
+    const buf = Buffer.alloc(33);
+    // PNG signature
+    Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]).copy(buf, 0);
+    // IHDR length (13) + 'IHDR'
+    buf.writeUInt32BE(13, 8);
+    buf.write('IHDR', 12, 'ascii');
+    // width = 128, height = 96
+    buf.writeUInt32BE(128, 16);
+    buf.writeUInt32BE(96, 20);
+    buf[24] = 8; // bit depth
+    buf[25] = 6; // color type RGBA
     validPngBase64 = `data:image/png;base64,${buf.toString('base64')}`;
   });
 

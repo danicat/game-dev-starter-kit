@@ -1,13 +1,13 @@
 {
   "name": "agy-paint-studio",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Interactive multi-layer drawing, PSD editing, and Gemini AI image refinement studio for Antigravity.",
   "type": "module",
   "main": "server/index.mjs",
   "scripts": {
     "dev": "vite",
     "typecheck": "tsc --noEmit",
-    "build": "tsc --noEmit && vite build",
+    "build": "tsc --noEmit && vite build && esbuild server/index.mjs --bundle --minify --platform=node --target=node20 --format=esm --external:sidecar_sdk --banner:js=\"import { createRequire as __bundleRequire } from 'node:module'; const require = __bundleRequire(import.meta.url);\" --outfile=dist/server.mjs",
     "preview": "vite preview",
     "start": "node sidecars/studio/run.mjs",
     "test": "node --test tests/*.test.mjs"
@@ -28,8 +28,7 @@
   "dependencies": {
     "@google/genai": "^2.27.0",
     "ag-psd": "^23.0.0",
-    "google-auth-library": "^11.1.0",
-    "sharp": "^0.35.5"
+    "google-auth-library": "^11.1.0"
   },
   "devDependencies": {
     "typescript": "^5.8.0",

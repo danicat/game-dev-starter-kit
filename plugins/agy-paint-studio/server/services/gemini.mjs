@@ -16,7 +16,6 @@
 
 import { GoogleGenAI } from '@google/genai';
 import { GoogleAuth } from 'google-auth-library';
-import sharp from 'sharp';
 
 export const DEFAULT_MODEL = 'gemini-3.1-flash-lite-image';
 
@@ -59,6 +58,99 @@ function validateDimension(value, name) {
       `Invalid ${name} "${value}": must be a finite integer between 1 and 4096.`
     );
   }
+}
+
+export function parseImageHeader(buf) {
+  if (!Buffer.isBuffer(buf) || buf.length < 16) {
+    throw new Error('Failed to decode input canvas image: buffer is too small or corrupted.');
+  }
+
+  // PNG: 89 50 4E 47 0D 0A 1A 0A + IHDR chunk
+  if (
+    buf.length >= 24 &&
+    buf[0] === 0x89 &&
+    buf[1] === 0x50 &&
+    buf[2] === 0x4e &&
+    buf[3] === 0x47 &&
+    buf[4] === 0x0d &&
+    buf[5] === 0x0a &&
+    buf[6] === 0x1a &&
+    buf[7] === 0x0a
+  ) {
+    const width = buf.readUInt32BE(16);
+    const height = buf.readUInt32BE(20);
+    return { format: 'png', mimeType: 'image/png', width, height };
+  }
+
+  // JPEG: FF D8
+  if (buf[0] === 0xff && buf[1] === 0xd8) {
+    let offset = 2;
+    while (offset + 9 < buf.length) {
+      if (buf[offset] !== 0xff) {
+        offset++;
+        continue;
+      }
+      const marker = buf[offset + 1];
+      if (marker === 0xff) {
+        offset++;
+        continue;
+      }
+      if (
+        marker === 0xd8 ||
+        marker === 0xd9 ||
+        (marker >= 0xd0 && marker <= 0xd7) ||
+        marker === 0x01
+      ) {
+        offset += 2;
+        continue;
+      }
+      const segLength = buf.readUInt16BE(offset + 2);
+      if (segLength < 2 || offset + 2 + segLength > buf.length) {
+        break;
+      }
+      const isSof =
+        (marker >= 0xc0 && marker <= 0xc3) ||
+        (marker >= 0xc5 && marker <= 0xc7) ||
+        (marker >= 0xc9 && marker <= 0xcb) ||
+        (marker >= 0xcd && marker <= 0xcf);
+      if (isSof && offset + 9 <= buf.length) {
+        const height = buf.readUInt16BE(offset + 5);
+        const width = buf.readUInt16BE(offset + 7);
+        return { format: 'jpeg', mimeType: 'image/jpeg', width, height };
+      }
+      offset += 2 + segLength;
+    }
+    throw new Error('Failed to decode JPEG dimensions: missing SOF marker.');
+  }
+
+  // WebP: RIFF....WEBP
+  if (
+    buf.length >= 30 &&
+    buf.toString('ascii', 0, 4) === 'RIFF' &&
+    buf.toString('ascii', 8, 12) === 'WEBP'
+  ) {
+    const chunkType = buf.toString('ascii', 12, 16);
+    if (chunkType === 'VP8 ') {
+      const width = buf.readUInt16LE(26) & 0x3fff;
+      const height = buf.readUInt16LE(28) & 0x3fff;
+      return { format: 'webp', mimeType: 'image/webp', width, height };
+    }
+    if (chunkType === 'VP8L') {
+      const bits = buf.readUInt32LE(21);
+      const width = (bits & 0x3fff) + 1;
+      const height = ((bits >> 14) & 0x3fff) + 1;
+      return { format: 'webp', mimeType: 'image/webp', width, height };
+    }
+    if (chunkType === 'VP8X') {
+      const width = 1 + buf.readUIntLE(24, 3);
+      const height = 1 + buf.readUIntLE(27, 3);
+      return { format: 'webp', mimeType: 'image/webp', width, height };
+    }
+  }
+
+  throw new Error(
+    `Unsupported input image format. Supported formats are: ${Object.keys(SUPPORTED_INPUT_FORMATS).join(', ')}.`
+  );
 }
 
 function extractBase64Payload(image) {
@@ -280,30 +372,8 @@ export class GeminiRefineService {
     }
 
     const inputBuffer = Buffer.from(cleanBase64, 'base64');
-    let inputMetadata;
-    try {
-      inputMetadata = await sharp(inputBuffer).metadata();
-    } catch (err) {
-      throw new Error(`Failed to decode input canvas image with sharp: ${err.message}`);
-    }
-
-    const format =
-      typeof inputMetadata?.format === 'string'
-        ? inputMetadata.format.toLowerCase()
-        : '';
-    const inputMimeType = Object.prototype.hasOwnProperty.call(
-      SUPPORTED_INPUT_FORMATS,
-      format
-    )
-      ? SUPPORTED_INPUT_FORMATS[format]
-      : null;
-
-    if (!inputMimeType) {
-      throw new Error(
-        `Unsupported input image format "${inputMetadata?.format || 'unknown'}". ` +
-        `Supported formats are: ${Object.keys(SUPPORTED_INPUT_FORMATS).join(', ')}.`
-      );
-    }
+    const inputMetadata = parseImageHeader(inputBuffer);
+    const inputMimeType = inputMetadata.mimeType;
 
     validateDimension(inputMetadata.width, 'input image width');
     validateDimension(inputMetadata.height, 'input image height');
@@ -397,9 +467,13 @@ export class GeminiRefineService {
       : [];
 
     let generatedBase64 = null;
+    let outputMimeType = 'image/png';
     for (const part of parts) {
       if (part?.inlineData?.data) {
         generatedBase64 = part.inlineData.data;
+        if (typeof part.inlineData.mimeType === 'string' && part.inlineData.mimeType.trim()) {
+          outputMimeType = part.inlineData.mimeType.trim();
+        }
         break;
       }
     }
@@ -424,26 +498,13 @@ export class GeminiRefineService {
       );
     }
 
-    const generatedBuffer = Buffer.from(generatedBase64, 'base64');
-    let resizedBuffer;
-    try {
-      resizedBuffer = await sharp(generatedBuffer)
-        .resize(targetWidth, targetHeight, { fit: 'fill' })
-        .png()
-        .toBuffer();
-    } catch (err) {
-      throw new Error(
-        `Failed to resize generated image from model "${activeModel}" with sharp: ${err.message}`
-      );
-    }
-
-    const outputBase64 = resizedBuffer.toString('base64');
-    const dataUrl = `data:image/png;base64,${outputBase64}`;
+    const outputBase64 = generatedBase64.replace(/\s+/g, '');
+    const dataUrl = `data:${outputMimeType};base64,${outputBase64}`;
 
     return {
       success: true,
       modelUsed: activeModel,
-      mimeType: 'image/png',
+      mimeType: outputMimeType,
       imageBase64: dataUrl,
       image: outputBase64,
       width: targetWidth,

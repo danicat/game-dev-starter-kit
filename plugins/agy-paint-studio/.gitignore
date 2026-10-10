@@ -1,5 +1,4 @@
 node_modules/
-dist/
 .antigravity_sketches/
 .DS_Store
 *.log

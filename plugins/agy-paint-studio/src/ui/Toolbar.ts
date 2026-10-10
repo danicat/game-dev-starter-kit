@@ -20,6 +20,7 @@ import { SelectionTool } from '../engine/tools/SelectionTool.ts';
 import { ShapeTool } from '../engine/tools/ShapeTool.ts';
 import { TextTool } from '../engine/tools/TextTool.ts';
 import { BucketTool } from '../engine/tools/BucketTool.ts';
+import { EraserTool } from '../engine/tools/EraserTool.ts';
 
 export class Toolbar {
   private engine: CanvasEngine;
@@ -253,6 +254,8 @@ export class Toolbar {
       tool.fontSize = Math.max(8, Math.min(120, tool.fontSize + delta));
     } else if (tool instanceof BucketTool) {
       tool.tolerance = Math.max(0, Math.min(100, tool.tolerance + delta));
+    } else if (tool instanceof EraserTool) {
+      tool.size = Math.max(1, Math.min(100, tool.size + delta));
     } else {
       this.engine.brushSize = Math.max(1, Math.min(100, this.engine.brushSize + delta));
     }

@@ -19,12 +19,32 @@ import type { CanvasEngine } from '../CanvasEngine.ts';
 import type { Layer } from '../Layer.ts';
 
 export class EraserTool extends BaseTool {
+  public size = 20;
   private isDrawing = false;
   private lastPt: Point | null = null;
+  private cursorPt: Point | null = null;
   private strokeBaseImageData: ImageData | null = null;
+  private maskCanvas: HTMLCanvasElement | null = null;
+  private maskCtx: CanvasRenderingContext2D | null = null;
 
   constructor() {
     super('eraser', 'Eraser', 'crosshair');
+  }
+
+  private getMaskContext(width: number, height: number): CanvasRenderingContext2D {
+    if (!this.maskCanvas || !this.maskCtx) {
+      this.maskCanvas = document.createElement('canvas');
+      const ctx = this.maskCanvas.getContext('2d');
+      if (!ctx) {
+        throw new Error('Failed to create 2D context for EraserTool mask canvas.');
+      }
+      this.maskCtx = ctx;
+    }
+    if (this.maskCanvas.width !== width || this.maskCanvas.height !== height) {
+      this.maskCanvas.width = width;
+      this.maskCanvas.height = height;
+    }
+    return this.maskCtx;
   }
 
   onPointerDown(engine: CanvasEngine, pt: Point): void {
@@ -33,17 +53,18 @@ export class EraserTool extends BaseTool {
 
     this.isDrawing = true;
     this.lastPt = pt;
+    this.cursorPt = pt;
     this.strokeBaseImageData = layer.ctx.getImageData(0, 0, engine.width, engine.height);
 
-    engine.overlayCtx.clearRect(0, 0, engine.width, engine.height);
-    engine.overlayCanvas.style.opacity = '0';
+    const eraserSize = Math.max(1, this.size);
+    const mCtx = this.getMaskContext(engine.width, engine.height);
+    mCtx.clearRect(0, 0, engine.width, engine.height);
 
-    const mCtx = engine.overlayCtx;
     mCtx.save();
     mCtx.globalAlpha = 1.0;
     mCtx.fillStyle = '#000000';
     mCtx.beginPath();
-    mCtx.arc(pt.x, pt.y, Math.max(0.5, engine.brushSize / 2), 0, Math.PI * 2);
+    mCtx.arc(pt.x, pt.y, Math.max(0.5, eraserSize / 2), 0, Math.PI * 2);
     mCtx.fill();
     mCtx.restore();
 
@@ -51,15 +72,20 @@ export class EraserTool extends BaseTool {
   }
 
   onPointerMove(engine: CanvasEngine, pt: Point): void {
-    if (!this.isDrawing || !this.lastPt) return;
+    this.cursorPt = pt;
+    if (!this.isDrawing || !this.lastPt) {
+      engine.renderOverlay();
+      return;
+    }
     const layer = engine.getActiveLayer();
     if (!layer || !layer.visible || layer.locked) return;
 
-    const mCtx = engine.overlayCtx;
+    const eraserSize = Math.max(1, this.size);
+    const mCtx = this.getMaskContext(engine.width, engine.height);
     mCtx.save();
     mCtx.globalAlpha = 1.0;
     mCtx.strokeStyle = '#000000';
-    mCtx.lineWidth = Math.max(1, engine.brushSize);
+    mCtx.lineWidth = eraserSize;
     mCtx.lineCap = 'round';
     mCtx.lineJoin = 'round';
 
@@ -80,16 +106,38 @@ export class EraserTool extends BaseTool {
   }
 
   deactivate(engine: CanvasEngine): void {
+    this.cursorPt = null;
     if (this.isDrawing) {
       this.finishStroke(engine);
     } else {
       this.lastPt = null;
       this.strokeBaseImageData = null;
-      engine.overlayCanvas.style.opacity = '1';
+      if (this.maskCtx && this.maskCanvas) {
+        this.maskCtx.clearRect(0, 0, this.maskCanvas.width, this.maskCanvas.height);
+      }
     }
   }
 
+  public renderOverlay(_engine: CanvasEngine, ctx: CanvasRenderingContext2D): void {
+    const pt = this.cursorPt || this.lastPt;
+    if (!pt) return;
+    const radius = Math.max(1, this.size / 2);
+    ctx.save();
+    ctx.strokeStyle = 'rgba(255, 255, 255, 0.85)';
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.arc(pt.x, pt.y, radius, 0, Math.PI * 2);
+    ctx.stroke();
+    ctx.strokeStyle = 'rgba(0, 0, 0, 0.75)';
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    ctx.arc(pt.x, pt.y, radius, 0, Math.PI * 2);
+    ctx.stroke();
+    ctx.restore();
+  }
+
   private applyErasePreview(engine: CanvasEngine, layer: Layer): void {
+    if (!this.maskCanvas) return;
     if (this.strokeBaseImageData) {
       layer.ctx.putImageData(this.strokeBaseImageData, 0, 0);
     }
@@ -97,7 +145,7 @@ export class EraserTool extends BaseTool {
     layer.ctx.save();
     layer.ctx.globalCompositeOperation = 'destination-out';
     layer.ctx.globalAlpha = opacity;
-    layer.ctx.drawImage(engine.overlayCanvas, 0, 0);
+    layer.ctx.drawImage(this.maskCanvas, 0, 0);
     layer.ctx.restore();
     layer.markDirty();
     engine.render();
@@ -107,8 +155,10 @@ export class EraserTool extends BaseTool {
     this.isDrawing = false;
     this.lastPt = null;
     this.strokeBaseImageData = null;
+    if (this.maskCtx && this.maskCanvas) {
+      this.maskCtx.clearRect(0, 0, this.maskCanvas.width, this.maskCanvas.height);
+    }
     engine.overlayCtx.clearRect(0, 0, engine.width, engine.height);
-    engine.overlayCanvas.style.opacity = '1';
     engine.render();
     engine.commitHistory();
   }

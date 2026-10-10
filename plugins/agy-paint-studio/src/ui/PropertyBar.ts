@@ -20,6 +20,7 @@ import { SelectionTool } from '../engine/tools/SelectionTool.ts';
 import { DragTool } from '../engine/tools/DragTool.ts';
 import { BucketTool } from '../engine/tools/BucketTool.ts';
 import { TextTool } from '../engine/tools/TextTool.ts';
+import { EraserTool } from '../engine/tools/EraserTool.ts';
 
 export class PropertyBar {
   private engine: CanvasEngine;
@@ -126,6 +127,10 @@ export class PropertyBar {
       } else if (this.engine.activeTool instanceof TextTool) {
         this.engine.activeTool.fontSize = val;
         if (this.sizeValueLabel) this.sizeValueLabel.textContent = `${val}px`;
+      } else if (this.engine.activeTool instanceof EraserTool) {
+        this.engine.activeTool.size = val;
+        if (this.sizeValueLabel) this.sizeValueLabel.textContent = `${val}px`;
+        this.engine.renderOverlay();
       } else {
         this.engine.brushSize = val;
         if (this.sizeValueLabel) this.sizeValueLabel.textContent = `${val}px`;
@@ -220,6 +225,7 @@ export class PropertyBar {
     const isDrag = tool instanceof DragTool || tool.id === 'drag';
     const isBucket = tool instanceof BucketTool || tool.id === 'bucket';
     const isText = tool instanceof TextTool || tool.id === 'text';
+    const isEraser = tool instanceof EraserTool || tool.id === 'eraser';
 
     if (this.sizeLabel && this.sizeSlider && this.sizeValueLabel) {
       if (isBucket && tool instanceof BucketTool) {
@@ -238,6 +244,14 @@ export class PropertyBar {
         this.sizeSlider.max = '120';
         this.sizeSlider.value = String(tool.fontSize);
         this.sizeValueLabel.textContent = `${tool.fontSize}px`;
+      } else if (isEraser && tool instanceof EraserTool) {
+        this.sizeLabel.textContent = 'Size';
+        this.sizeSlider.title = 'Eraser Width (1 - 100px)';
+        this.sizeSlider.setAttribute('aria-label', 'Eraser Size');
+        this.sizeSlider.min = '1';
+        this.sizeSlider.max = '100';
+        this.sizeSlider.value = String(tool.size);
+        this.sizeValueLabel.textContent = `${tool.size}px`;
       } else {
         this.sizeLabel.textContent = 'Size';
         this.sizeSlider.title = 'Brush / Stroke Width';
