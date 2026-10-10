@@ -1,0 +1,31 @@
+{
+  "name": "agy-game-studio",
+  "version": "0.1.0",
+  "description": "Build 2D games in Go with Ebitengine, Nano Banana 2.1, and Lyria 3.5.",
+  "type": "module",
+  "main": "sidecars/studio/main.mjs",
+  "scripts": {
+    "dev": "vite",
+    "typecheck": "tsc --noEmit",
+    "build": "tsc --noEmit && vite build",
+    "preview": "vite preview",
+    "start": "node sidecars/studio/main.mjs",
+    "test": "node --test tests/*.test.mjs"
+  },
+  "keywords": [
+    "antigravity",
+    "plugin",
+    "sidecar",
+    "ui-extension",
+    "ebitengine",
+    "playtest-studio",
+    "gamedev",
+    "gemini"
+  ],
+  "author": "Daniela Petruzalek",
+  "license": "Apache-2.0",
+  "devDependencies": {
+    "typescript": "^5.8.0",
+    "vite": "^6.2.0"
+  }
+}

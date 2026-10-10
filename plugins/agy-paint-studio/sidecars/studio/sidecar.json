@@ -1,0 +1,22 @@
+{
+  "command": "node",
+  "args": ["run.mjs"],
+  "restart_policy": "always",
+  "display_name": "Paint Studio",
+  "description": "Interactive multi-layer drawing, PSD editing, and Gemini AI image refinement studio sidecar for Antigravity.",
+  "has_web_ui": true,
+  "ui_config": {
+    "display_name": "Paint Studio",
+    "views": [
+      {
+        "path": "/",
+        "entrypoint": "SIDECAR_UI_ENTRYPOINT_AUX_PANE",
+        "title": "Paint Studio",
+        "file_extensions": [".psd"]
+      }
+    ]
+  },
+  "env": {
+    "MODEL": "gemini-3.1-flash-lite-image"
+  }
+}

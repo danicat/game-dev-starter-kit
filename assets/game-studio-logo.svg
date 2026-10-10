@@ -1,0 +1,48 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" width="128" height="128" fill="none">
+  <defs>
+    <linearGradient id="bgGrad" x1="16" y1="16" x2="112" y2="112" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#1E1B4B"/>
+      <stop offset="50%" stop-color="#312E81"/>
+      <stop offset="100%" stop-color="#0F172A"/>
+    </linearGradient>
+    <linearGradient id="padGrad" x1="28" y1="42" x2="100" y2="94" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#38BDF8"/>
+      <stop offset="100%" stop-color="#818CF8"/>
+    </linearGradient>
+    <linearGradient id="sparkGrad" x1="56" y1="20" x2="72" y2="40" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#FDE047"/>
+      <stop offset="100%" stop-color="#F97316"/>
+    </linearGradient>
+  </defs>
+
+  <!-- Outer rounded badge with ~10% margin (12px) -->
+  <rect x="12" y="12" width="104" height="104" rx="24" fill="url(#bgGrad)" stroke="#6366F1" stroke-width="3"/>
+
+  <!-- Subtle pixel grid accents in corners -->
+  <rect x="24" y="24" width="6" height="6" fill="#38BDF8" opacity="0.45"/>
+  <rect x="32" y="24" width="6" height="6" fill="#38BDF8" opacity="0.2"/>
+  <rect x="24" y="32" width="6" height="6" fill="#38BDF8" opacity="0.2"/>
+  <rect x="98" y="98" width="6" height="6" fill="#F472B6" opacity="0.45"/>
+  <rect x="90" y="98" width="6" height="6" fill="#F472B6" opacity="0.2"/>
+  <rect x="98" y="90" width="6" height="6" fill="#F472B6" opacity="0.2"/>
+
+  <!-- AI Gemini Sparkle Crown above controller -->
+  <path d="M64 20 L67.5 29.5 L77 33 L67.5 36.5 L64 46 L60.5 36.5 L51 33 L60.5 29.5 Z" fill="url(#sparkGrad)"/>
+
+  <!-- 2D Gamepad Body -->
+  <path d="M36 50 H92 C99 50 104 56 102 64 L97 86 C95.5 92.5 89 96 83 93 L74 86 H54 L45 93 C39 96 32.5 92.5 31 86 L26 64 C24 56 29 50 36 50 Z"
+        fill="#0F172A" stroke="url(#padGrad)" stroke-width="4" stroke-linejoin="round"/>
+
+  <!-- D-Pad (Left) -->
+  <path d="M43 60 H49 V66 H55 V72 H49 V78 H43 V72 H37 V66 H43 V60 Z" fill="#38BDF8"/>
+
+  <!-- Action Buttons (Right) -->
+  <circle cx="86" cy="64" r="4.5" fill="#F43F5E"/>
+  <circle cx="76" cy="73" r="4.5" fill="#22C55E"/>
+  <circle cx="86" cy="73" r="4.5" fill="#FACC15" opacity="0.25"/>
+  <circle cx="76" cy="64" r="4.5" fill="#38BDF8" opacity="0.25"/>
+
+  <!-- Center Start/Select Pixel Bars -->
+  <rect x="59" y="74" width="4" height="2.5" rx="1" fill="#94A3B8"/>
+  <rect x="65" y="74" width="4" height="2.5" rx="1" fill="#94A3B8"/>
+</svg>

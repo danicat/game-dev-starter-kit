@@ -1,0 +1,13 @@
+{
+  "name": "agy-game-studio",
+  "displayName": "Antigravity 2D Game Studio",
+  "version": "0.1.0",
+  "description": "End-to-end 2D game development studio for Go and Ebitengine with live 60 FPS WASM Playtest Studio, 10-second DVR GIF bug annotation, procedural art/audio synthesis, Nano Banana 2.1, Lyria 3.5, and GoDoctor quality gates.",
+  "logo": "assets/logo.svg",
+  "suggestedPrompts": [
+    "Design and build a 2D arcade game in Go with Ebitengine and launch it in Playtest Studio",
+    "Open Playtest Studio to playtest my Ebitengine game and capture a 10s DVR GIF bug report",
+    "Generate procedural 2D sprites, particle VFX, and a chiptune soundtrack for my game"
+  ]
+}
+

@@ -1,0 +1,7 @@
+{
+  "name": "agy-game-studio-panel",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Playtest Studio UI extension sidecar for Antigravity."
+}

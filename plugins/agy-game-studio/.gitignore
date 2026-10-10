@@ -1,0 +1,18 @@
+# macOS
+.DS_Store
+
+# Python caches & virtual environments
+__pycache__/
+*.py[cod]
+*$py.class
+.pytest_cache/
+.ruff_cache/
+.venv/
+venv/
+
+# Go, Node & WebAssembly build artifacts
+node_modules/
+*.wasm
+bin/
+coverage.out
+

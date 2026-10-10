@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<!--
+ Copyright 2026 Google LLC
+
+ Licensed under the Apache License, Version 2.0 (the "License");
+ you may not use this file except in compliance with the License.
+ You may obtain a copy of the License at
+
+     http://www.apache.org/licenses/LICENSE-2.0
+
+ Unless required by applicable law or agreed to in writing, software
+ distributed under the License is distributed on an "AS IS" BASIS,
+ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ See the License for the specific language governing permissions and
+ limitations under the License.
+-->
+
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Paint Studio</title>
+  <link rel="icon" type="image/svg+xml" href="/assets/logo.svg" />
+</head>
+<body class="studio-container studio-mode-preview">
+  <div id="app" class="studio-container studio-mode-preview">
+    <div id="app-root" class="studio-container studio-mode-preview">
+      <!-- Top Header -->
+      <header id="header-bar"></header>
+
+      <!-- Contextual Property Bar -->
+      <div id="property-bar"></div>
+
+      <!-- Workspace Body -->
+      <div id="workspace-body">
+        <!-- Left Toolbar Palette -->
+        <aside id="toolbar-container"></aside>
+
+        <!-- Center Viewport Canvas -->
+        <main id="canvas-viewport-container"></main>
+
+        <!-- Right Layer Panel -->
+        <aside id="layers-container"></aside>
+      </div>
+
+      <!-- Bottom AI Refinement Bar (Shared across Preview & Full Modes) -->
+      <footer id="ai-refine-bar" class="ai-refine-bar"></footer>
+    </div>
+  </div>
+
+  <script type="module" src="/src/main.ts"></script>
+</body>
+</html>
